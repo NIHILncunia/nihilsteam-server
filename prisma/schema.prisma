@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator prismaClassGenerator {
+  provider            = "prisma-class-generator"
+  output              = "../src/common/model"
+  dryRun              = "false"
+  useUndefinedDefault = "true"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Article {
+  id              Int              @id @default(autoincrement())
+  user            User             @relation(fields: [userId], references: [id], map: "article_user_id_fk")
+  userId          Int
+  title           String           @db.VarChar(100)
+  content         String           @db.VarChar(1000)
+  createdAt       DateTime?        @default(now()) @db.DateTime(0)
+  updatedAt       DateTime?        @updatedAt @db.DateTime(0)
+  article_comment ArticleComment[]
+  article_image   ArticleImage[]
+
+  @@index([userId], map: "article_user_id_fk")
+  @@map("article")
+}
+
+model ArticleComment {
+  id        Int       @id @default(autoincrement())
+  article   Article   @relation(fields: [articleId], references: [id], map: "articleComment_article_id_fk")
+  articleId Int
+  user      User      @relation(fields: [userId], references: [id], map: "articleComment_user_id_fk")
+  userId    Int
+  comment   String    @db.VarChar(1000)
+  createdAt DateTime? @default(now()) @db.DateTime(0)
+  updatedAt DateTime? @updatedAt @db.DateTime(0)
+
+  @@index([articleId], map: "articleComment_article_id_fk")
+  @@index([userId], map: "articleComment_user_id_fk")
+  @@map("article_comment")
+}
+
+model ArticleImage {
+  id        Int     @id @default(autoincrement())
+  article   Article @relation(fields: [articleId], references: [id], map: "articleimage_article_id_fk")
+  articleId Int
+  imagePath String  @db.VarChar(1000)
+  imageExt  String  @db.VarChar(10)
+  imageSize String  @db.MediumText
+
+  @@index([articleId], map: "articleimage_article_id_fk")
+  @@map("article_image")
+}
+
+model Cart {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id], map: "cart_user_id_fk")
+  userId Int
+  game   Game @relation(fields: [gameId], references: [id], map: "cart_game_id_fk")
+  gameId Int
+  price  Int
+
+  @@index([gameId], map: "cart_game_id_fk")
+  @@index([userId], map: "cart_user_id_fk")
+  @@map("cart")
+}
+
+model Game {
+  id                  Int           @id @default(autoincrement())
+  thumbnail           String        @db.VarChar(1000)
+  title               String        @db.VarChar(100)
+  developer           String        @db.VarChar(100)
+  publisher           String        @db.VarChar(100)
+  genre               String        @db.VarChar(100)
+  releaseAt           DateTime?     @default(now()) @db.DateTime(0)
+  score               Float?        @default(0) @db.Float
+  rating              String        @db.VarChar(100)
+  price               Int
+  discount            Int?          @default(0)
+  description         String        @db.VarChar(1000)
+  language            String        @db.VarChar(100)
+  system_requirements String        @db.VarChar(1000)
+  cart                Cart[]
+  game_comment        GameComment[]
+  order_detail        OrderDetail[]
+  refund              Refund[]
+
+  @@map("game")
+}
+
+model GameComment {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id], map: "game_comment_user_id_fk")
+  userId    Int
+  game      Game      @relation(fields: [gameId], references: [id], map: "game_comment_game_id_fk")
+  gameId    Int
+  comment   String    @db.VarChar(2000)
+  score     Float?    @default(0) @db.Float
+  up        Int       @default(0)
+  down      Int       @default(0)
+  createdAt DateTime? @default(now()) @db.DateTime(0)
+  updatedAt DateTime? @updatedAt @db.DateTime(0)
+
+  @@index([gameId], map: "game_comment_game_id_fk")
+  @@index([userId], map: "game_comment_user_id_fk")
+  @@map("game_comment")
+}
+
+model OrderDetail {
+  id         Int       @id @default(autoincrement())
+  user_order UserOrder @relation(fields: [orderId], references: [id], map: "order_detail_user_order_id_fk")
+  orderId    Int
+  game       Game      @relation(fields: [gameId], references: [id], map: "order_detail_game_id_fk")
+  gameId     Int
+  price      Int
+  status     String    @default("결제완료") @db.VarChar(100)
+
+  @@index([gameId], map: "order_detail_game_id_fk")
+  @@index([orderId], map: "order_detail_user_order_id_fk")
+  @@map("order_detail")
+}
+
+model Point {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id], map: "point_user_id_fk")
+  userId    Int
+  increase  Int?      @default(0)
+  decrease  Int?      @default(0)
+  message   String?   @db.VarChar(100)
+  createdAt DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([userId], map: "point_user_id_fk")
+  @@map("point")
+}
+
+model Refund {
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id], map: "refund_user_id_fk")
+  userId     Int
+  user_order UserOrder @relation(fields: [orderId], references: [id], map: "refund_user_order_id_fk")
+  orderId    Int
+  game       Game      @relation(fields: [gameId], references: [id], map: "refund_game_id_fk")
+  gameId     Int
+  title      String    @db.VarChar(200)
+  content    String    @db.VarChar(1000)
+  status     String    @default("환불요청") @db.VarChar(100)
+  createdAt  DateTime? @default(now()) @db.DateTime(0)
+  updatedAt  DateTime? @updatedAt @db.DateTime(0)
+
+  @@index([gameId], map: "refund_game_id_fk")
+  @@index([userId], map: "refund_user_id_fk")
+  @@index([orderId], map: "refund_user_order_id_fk")
+  @@map("refund")
+}
+
+model User {
+  id              Int              @id @default(autoincrement())
+  userId          String           @unique @db.VarChar(30)
+  userName        String           @db.VarChar(30)
+  role            String           @default("user") @db.VarChar(30)
+  email           String           @unique @db.VarChar(30)
+  phone           String?          @db.VarChar(20)
+  birthday        DateTime?        @db.DateTime(0)
+  userPoint       Int              @default(0)
+  status          String           @default("활동계정") @db.VarChar(20)
+  createdAt       DateTime?        @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime?        @updatedAt @db.Timestamp(0)
+  article         Article[]
+  article_comment ArticleComment[]
+  cart            Cart[]
+  game_comment    GameComment[]
+  point           Point[]
+  refund          Refund[]
+  user_auth       UserAuth[]
+  user_order      UserOrder[]
+  user_token      UserToken[]
+  Withdraw        Withdraw[]
+
+  @@map("user")
+}
+
+model UserAuth {
+  id             Int    @id @default(autoincrement())
+  user           User   @relation(fields: [userId], references: [id], map: "user_auth_user_id_fk")
+  userId         Int    @unique
+  hashedPassword String @db.VarChar(200)
+
+  @@index([userId], map: "user_auth_user_id_fk")
+  @@map("user_auth")
+}
+
+model UserOrder {
+  id           Int           @id @default(autoincrement())
+  user         User          @relation(fields: [userId], references: [id], map: "user_order_user_id_fk")
+  userId       Int
+  totalPrice   Int
+  usePoint     Int?          @default(0)
+  status       String        @default("결제완료") @db.VarChar(100)
+  createdAt    DateTime?     @default(now()) @db.DateTime(0)
+  updatedAt    DateTime?     @updatedAt @db.DateTime(0)
+  order_detail OrderDetail[]
+  refund       Refund[]
+
+  @@index([userId], map: "user_order_user_id_fk")
+  @@map("user_order")
+}
+
+model UserToken {
+  id                 Int     @id @default(autoincrement())
+  user               User    @relation(fields: [userId], references: [id], map: "userToken_user_id_fk")
+  userId             Int     @unique
+  hashedRefreshToken String? @db.VarChar(1000)
+
+  @@index([userId], map: "userToken_user_id_fk")
+  @@map("user_token")
+}
+
+model Withdraw {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id], map: "withdraw_user_id_fk")
+  userId    Int       @unique
+  text      String    @db.VarChar(400)
+  createdAt DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([userId], map: "withdraw_user_id_fk")
+  @@map("withdraw")
+}
